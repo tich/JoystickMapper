@@ -2,6 +2,10 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <libusb.h>
+
+#include "common.h"
+#include "usbhandler.h"
 
 namespace Ui {
 class MainWindow;
@@ -15,6 +19,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     
+private:
+
 private:
     Ui::MainWindow *ui;
 };
