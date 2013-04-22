@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-#define READ_ENDPOINT   0x80 | 3
+#define READ_ENDPOINT   0x83
 #define WRITE_ENDPOINT  0x02
 
 using namespace std;

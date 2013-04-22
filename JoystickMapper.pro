@@ -18,10 +18,13 @@ LIBS += -lusb-1.0
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    usbhandler.cpp
+    usbhandler.cpp \
+    wireddevicehandler.cpp
 
 HEADERS  += mainwindow.h \
     common.h \
-    usbhandler.h
+    usbhandler.h \
+    wireddevicehandler.h \
+    devicehandler.h
 
 FORMS    += mainwindow.ui

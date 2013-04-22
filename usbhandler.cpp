@@ -13,7 +13,7 @@ USBHandler::~USBHandler() {
     }
 
     for(size_t i = 0; i < serials.size(); i++) {
-        delete [] serials[i];
+        delete serials[i];
     }
 
     for(size_t i = 0; i < handles.size(); i++) {
@@ -75,17 +75,20 @@ bool USBHandler::is_requested_device(libusb_device *dev, uint16_t idVendor, uint
 }
 
 bool USBHandler::is_already_open(libusb_device_handle *handle) {
-    unsigned char *serial = new unsigned char(11);
+    int err;
+    unsigned char *serial = new unsigned char[11];
 
     memset(serial, 0, 11);
 
-    if(libusb_get_string_descriptor_ascii(handle, 0x03, serial, 11)) {
-        fprintf(stderr, "Error reading device serial number.\n");
+    if((err = libusb_get_string_descriptor_ascii(handle, 0xDC, serial, 11)) < 0) {
+        fprintf(stderr, "Error reading device serial number: %d\n", err);
+        delete [] serial;
         return true;
     }
 
     for(size_t i = 0; i < serials.size(); i++) {
         if(strncmp((const char *) serial, (const char *) serials[i], 11) == 0) {
+            delete [] serial;
             return true;
         }
     }
@@ -104,9 +107,10 @@ int USBHandler::write_to_device(libusb_device_handle *handle, unsigned char *dat
     }
 
     int size = 0;
-    if(libusb_bulk_transfer(handle, WRITE_ENDPOINT, data, length, &size, timeout) != 0) {
-        fprintf(stderr, "Error writing to device\n");
-        return -1;
+    int err = 0;
+    if((err = libusb_bulk_transfer(handle, WRITE_ENDPOINT, data, length, &size, timeout)) != 0) {
+        fprintf(stderr, "Error writing to device %d\n", err);
+        return err;
     }
 
     return size;
@@ -122,9 +126,10 @@ int USBHandler::read_from_device(libusb_device_handle *handle, unsigned char *da
     }
 
     int size = 0;
-    if(libusb_bulk_transfer(handle, READ_ENDPOINT, data, length, &size, timeout) != 0) {
-        fprintf(stderr, "Error reading from device\n");
-        return -1;
+    int err = 0;
+    if((err = libusb_bulk_transfer(handle, READ_ENDPOINT, data, length, &size, timeout)) != 0) {
+        fprintf(stderr, "Error reading from device %d\n", err);
+        return err;
     }
 
     return size;
@@ -152,9 +157,18 @@ bool USBHandler::init_device(libusb_device_handle *handle) {
         return false;
     }
 
-    if(libusb_set_configuration(handle, 1)) {
-        fprintf(stderr, "Error setting device configuration\n");
+    int config = 0;
+
+    if(libusb_get_configuration(handle, &config)) {
+        fprintf(stderr, "Error getting active device configuration\n");
         return false;
+    }
+
+    if(config != 1) {
+        if(libusb_set_configuration(handle, 1)) {
+            fprintf(stderr, "Error setting device configuration\n");
+            return false;
+        }
     }
 
     if(libusb_claim_interface(handle, 0)) {
